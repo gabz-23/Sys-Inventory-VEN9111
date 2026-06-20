@@ -12,6 +12,7 @@ export const DeskDataTableModel = (sequelize) => {
             code: {
                 type: DataTypes.STRING(15),
                 allowNull: false,
+                unique: true,
                 validate: {
                     notEmpty: true,
                 },

@@ -2,6 +2,17 @@ import { Op } from 'sequelize';
 import { DeskTable, Computer, Employee, DeskAccessory } from '../database.js';
 import { logActivity } from './activityLogServices.js';
 import { logItemMovement } from './itemTraceServices.js';
+import { generateCode } from '../helpers/generateCode.js';
+
+const validateUniqueCode = async (data, excludeId = null) => {
+    if (data.code) {
+        const whereExclude = excludeId ? { id: { [Op.ne]: excludeId } } : {};
+        const existing = await DeskTable.findOne({ where: { ...whereExclude, code: data.code } });
+        if (existing) {
+            throw new Error(`VALIDATION_ERROR:code:El código "${data.code}" ya está registrado`);
+        }
+    }
+};
 
 const accessoryTypeMap = {
     silla: 'chair',
@@ -94,6 +105,9 @@ export const getAllDeskTables = async () => {
 
 export const createDeskTable = async (data) => {
     const { computer, employee, accessories, ...deskData } = data;
+
+    await validateUniqueCode(deskData);
+
     let deskDataWithRelations = { ...deskData };
     if (computer) deskDataWithRelations.computerId = computer;
     if (employee) deskDataWithRelations.employeeId = employee;
@@ -127,6 +141,9 @@ export const createDeskTable = async (data) => {
 export const updateDeskTable = async (id, data) => {
     const old = await DeskTable.findByPk(id);
     const { computer, employee, accessories, ...deskData } = data;
+
+    await validateUniqueCode(deskData, id);
+
     let deskDataWithRelations = { ...deskData };
     if (computer !== undefined) deskDataWithRelations.computerId = computer || null;
     if (employee !== undefined) deskDataWithRelations.employeeId = employee || null;
@@ -199,10 +216,14 @@ export const duplicateDeskTables = async (ids) => {
     const originals = await DeskTable.findAll({ where: { id: ids } });
 
     const duplicated = [];
-    for (const original of originals) {
-        const suffix = Math.random().toString(36).slice(2, 5).toUpperCase();
-        const baseCode = original.code.slice(0, 7);
-        const newCode = `${baseCode}-DUP${suffix}`.slice(0, 15);
+    for (const _original of originals) {
+        let newCode;
+        let retries = 0;
+        do {
+            newCode = generateCode({ tag: 'ESC' });
+            retries++;
+        } while (await DeskTable.findOne({ where: { code: newCode } }) && retries < 20);
+
         const created = await DeskTable.create({ code: newCode });
 
         await logActivity('desk', created.id, 'created', created.code, 'Escritorio');

@@ -12,13 +12,15 @@ export const ComputerModel = (sequelize) =>
             code: {
                 type: DataTypes.STRING(15),
                 allowNull: false,
+                unique: true,
                 validate: {
                     notEmpty: true,
                 },
             },
             serial: {
-                type: DataTypes.STRING(30),
+                type: DataTypes.STRING(255),
                 allowNull: false,
+                unique: true,
                 validate: {
                     notEmpty: true,
                 },
@@ -31,14 +33,14 @@ export const ComputerModel = (sequelize) =>
                 },
             },
             brand: {
-                type: DataTypes.STRING(30),
+                type: DataTypes.STRING(255),
                 allowNull: false,
                 validate: {
                     notEmpty: true,
                 },
             },
             model: {
-                type: DataTypes.STRING(30),
+                type: DataTypes.STRING(255),
                 allowNull: false,
                 validate: {
                     notEmpty: true,
@@ -52,15 +54,15 @@ export const ComputerModel = (sequelize) =>
                 },
             },
             ramMemory: {
-                type: DataTypes.STRING(30),
+                type: DataTypes.STRING(255),
                 allowNull: false,
             },
             cpu: {
-                type: DataTypes.STRING(40),
+                type: DataTypes.STRING(255),
                 allowNull: false,
             },
             storage: {
-                type: DataTypes.STRING(30),
+                type: DataTypes.STRING(255),
                 allowNull: false,
             },
             storageType: {

@@ -14,11 +14,19 @@ export default () => {
     });
 
     ipcMain.handle('db:createEmployee', async (_, data) => {
-        return await createEmployee(data);
+        try {
+            return await createEmployee(data);
+        } catch (error) {
+            throw new Error(error.message || 'Error al crear empleado');
+        }
     });
 
     ipcMain.handle('db:updateEmployee', async (_, { id, data }) => {
-        return await updateEmployee(id, data);
+        try {
+            return await updateEmployee(id, data);
+        } catch (error) {
+            throw new Error(error.message || 'Error al actualizar empleado');
+        }
     });
 
     ipcMain.handle('db:deleteEmployee', async (_, id) => {

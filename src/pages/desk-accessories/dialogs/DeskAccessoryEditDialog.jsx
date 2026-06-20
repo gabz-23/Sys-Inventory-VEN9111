@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as zod from 'zod';
+import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogHeader } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -14,15 +15,15 @@ const accessoryStateOptions = [
     { label: 'Dañado', value: 'Dañado' },
     { label: 'Repuesto', value: 'Repuesto' },
     { label: 'En reparacion', value: 'En reparacion' },
-    { label: 'Reparado', value: 'Reparado' },
-    { label: 'Reconstruido', value: 'Reconstruido' },
+    { label: 'Reincorporado', value: 'Reincorporado' },
+
 ];
 
 const deskAccessoryFormSchema = zod.object({
     code: zod.string().min(1, 'El código es requerido'),
     serial: zod.string().optional().default(''),
     description: zod.string().optional().default(''),
-    type: zod.string().min(1, 'El tipo es requerido'),
+    type: zod.enum(['Silla', 'Lampara', 'Papelera', 'Archivero', 'Telefono'], { required_error: 'El tipo es requerido' }),
     state: zod.string().min(1, 'El estado es requerido'),
 });
 
@@ -36,6 +37,8 @@ const defaultFormData = {
 
 export const DeskAccessoryEditDialog = ({ deskAccessory, open, onOpenChange }) => {
     const { updateDeskAccessory } = useDeskAccessoryStore();
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(deskAccessoryFormSchema),
@@ -51,12 +54,30 @@ export const DeskAccessoryEditDialog = ({ deskAccessory, open, onOpenChange }) =
                 type: deskAccessory.type || '',
                 state: deskAccessory.state || 'bueno',
             });
+            setError('');
+            setIsLoading(false);
         }
     }, [deskAccessory, form]);
 
-    const handleSubmit = (data) => {
-        updateDeskAccessory(deskAccessory.id, data);
-        onOpenChange();
+    const handleSubmit = async (data) => {
+        setIsLoading(true);
+        setError('');
+
+        try {
+            await updateDeskAccessory(deskAccessory.id, data);
+            onOpenChange(false);
+        } catch (err) {
+            let errorMessage = err.message || 'Error al actualizar accesorio de escritorio';
+            errorMessage = errorMessage.replace(/^Error invoking remote method '[^']+': Error: /, '');
+            const match = errorMessage.match(/^VALIDATION_ERROR:(\w+):(.+)$/);
+            if (match) {
+                form.setError(match[1], { message: match[2] });
+            } else {
+                setError(errorMessage);
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -70,6 +91,11 @@ export const DeskAccessoryEditDialog = ({ deskAccessory, open, onOpenChange }) =
                 <div className="flex-1 overflow-y-auto min-h-0 px-6 pb-6 pt-4">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(handleSubmit)}>
+                            {error && (
+                                <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
+                                    {error}
+                                </div>
+                            )}
                             <div className="grid gap-4 grid-cols-2">
                                 <FormField
                                     control={form.control}
@@ -119,16 +145,20 @@ export const DeskAccessoryEditDialog = ({ deskAccessory, open, onOpenChange }) =
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Tipo</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="Ej: Silla, Lámpara, Archivero"
-                                                    {...field}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value;
-                                                        field.onChange(val ? val.charAt(0).toUpperCase() + val.slice(1).toLowerCase() : val);
-                                                    }}
-                                                />
-                                            </FormControl>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Seleccione el tipo" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="Silla">Silla</SelectItem>
+                                                    <SelectItem value="Lampara">Lámpara</SelectItem>
+                                                    <SelectItem value="Papelera">Papelera</SelectItem>
+                                                    <SelectItem value="Archivero">Archivero</SelectItem>
+                                                    <SelectItem value="Telefono">Teléfono</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -160,8 +190,15 @@ export const DeskAccessoryEditDialog = ({ deskAccessory, open, onOpenChange }) =
                                 />
                             </div>
 
-                            <Button className="w-full cursor-pointer mt-6" type="submit">
-                                Guardar Accesorio de Escritorio
+                            <Button className="w-full cursor-pointer mt-6" type="submit" disabled={isLoading}>
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Guardando...
+                                    </>
+                                ) : (
+                                    'Guardar Accesorio de Escritorio'
+                                )}
                             </Button>
                         </form>
                     </Form>

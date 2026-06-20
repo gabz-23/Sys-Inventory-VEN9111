@@ -14,7 +14,7 @@ const statusConfig = {
         chartColor: 'hsl(142, 76%, 36%)',
     },
     repaired: {
-        label: 'Reparado',
+        label: 'Reincorporado',
         color: '#a855f7',
         bgColor: 'bg-purple-50 dark:bg-purple-950/20',
         borderColor: 'border-purple-200 dark:border-purple-800',
@@ -57,7 +57,7 @@ const chartConfig = {
         color: statusConfig.good.chartColor,
     },
     repaired: {
-        label: 'Reparado',
+        label: 'Reincorporado',
         color: statusConfig.repaired.chartColor,
     },
     replacement: {
@@ -76,7 +76,7 @@ const chartConfig = {
 
 export function ChartPie({ computers }) {
     const goodComp = computers.filter((comp) => comp.state === 'Bueno').length;
-    const repairedComp = computers.filter((comp) => comp.state === 'Reparado').length;
+    const reincorporatedComp = computers.filter((comp) => comp.state === 'Reincorporado').length;
     const replComp = computers.filter((comp) => comp.state === 'Repuesto').length;
     const damagedComp = computers.filter((comp) => comp.state === 'Dañado').length;
     const reconstructedComp = computers.filter((comp) => comp.state === 'Reconstruido').length;
@@ -84,7 +84,7 @@ export function ChartPie({ computers }) {
     const total = computers.length;
     const percentages = {
         good: total > 0 ? ((goodComp / total) * 100).toFixed(1) : 0,
-        repaired: total > 0 ? ((repairedComp / total) * 100).toFixed(1) : 0,
+        repaired: total > 0 ? ((reincorporatedComp / total) * 100).toFixed(1) : 0,
         replacement: total > 0 ? ((replComp / total) * 100).toFixed(1) : 0,
         damaged: total > 0 ? ((damagedComp / total) * 100).toFixed(1) : 0,
         reconstructed: total > 0 ? ((reconstructedComp / total) * 100).toFixed(1) : 0,
@@ -92,7 +92,7 @@ export function ChartPie({ computers }) {
 
     const chartData = [
         { state: 'good', visitors: goodComp, fill: statusConfig.good.chartColor },
-        { state: 'repaired', visitors: repairedComp, fill: statusConfig.repaired.chartColor },
+        { state: 'repaired', visitors: reincorporatedComp, fill: statusConfig.repaired.chartColor },
         { state: 'replacement', visitors: replComp, fill: statusConfig.replacement.chartColor },
         { state: 'damaged', visitors: damagedComp, fill: statusConfig.damaged.chartColor },
         { state: 'reconstructed', visitors: reconstructedComp, fill: statusConfig.reconstructed.chartColor },
@@ -103,7 +103,7 @@ export function ChartPie({ computers }) {
 
     const stats = [
         { key: 'good', count: goodComp, config: statusConfig.good, percentage: percentages.good },
-        { key: 'repaired', count: repairedComp, config: statusConfig.repaired, percentage: percentages.repaired },
+        { key: 'repaired', count: reincorporatedComp, config: statusConfig.repaired, percentage: percentages.repaired },
         { key: 'replacement', count: replComp, config: statusConfig.replacement, percentage: percentages.replacement },
         { key: 'damaged', count: damagedComp, config: statusConfig.damaged, percentage: percentages.damaged },
         { key: 'reconstructed', count: reconstructedComp, config: statusConfig.reconstructed, percentage: percentages.reconstructed },

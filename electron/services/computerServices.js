@@ -3,12 +3,14 @@ import { Computer, DeskTable, Peripheral, Component } from '../database.js';
 
 import { logActivity } from './activityLogServices.js';
 import { logItemMovement } from './itemTraceServices.js';
+import { generateCode, generateUniqueSerial } from '../helpers/generateCode.js';
 
 export const getAllComputers = async () => {
     const items = await Computer.findAll({
         include: [
             { model: Peripheral, as: 'peripherals' },
             { model: Component, as: 'components' },
+            { model: DeskTable, as: 'deskTable' },
         ],
         order: [['createdAt', 'ASC']],
     });
@@ -101,9 +103,29 @@ const unlinkComponents = async (computerId, keepIds = []) => {
     }
 };
 
+const validateUniqueCodeAndSerial = async (data, excludeId = null) => {
+    const whereExclude = excludeId ? { id: { [Op.ne]: excludeId } } : {};
+
+    if (data.code) {
+        const existing = await Computer.findOne({ where: { ...whereExclude, code: data.code } });
+        if (existing) {
+            throw new Error(`VALIDATION_ERROR:code:El código "${data.code}" ya está registrado`);
+        }
+    }
+
+    if (data.serial) {
+        const existing = await Computer.findOne({ where: { ...whereExclude, serial: data.serial } });
+        if (existing) {
+            throw new Error(`VALIDATION_ERROR:serial:El serial "${data.serial}" ya está registrado`);
+        }
+    }
+};
+
 export const createComputer = async (data) => {
     try {
         const { peripherals, componentIds, assignedComponents: _assignedComponents, ...computerData } = data;
+
+        await validateUniqueCodeAndSerial(computerData);
 
         const createdComputer = await Computer.create(computerData);
         const title = `${createdComputer.brand || ''} ${createdComputer.model || ''}`.trim() || 'Computador';
@@ -172,6 +194,8 @@ export const updateComputer = async (id, data) => {
             ],
         });
         const compTitle = `${before?.brand || ''} ${before?.model || ''}`.trim() || 'Computador';
+
+        await validateUniqueCodeAndSerial(computerData, id);
 
         await Computer.update(computerData, { where: { id } });
 
@@ -291,12 +315,19 @@ export const duplicateComputers = async (ids) => {
     const duplicated = [];
 
     for (const comp of originals) {
-        const suffix = Math.random().toString(36).slice(2, 5).toUpperCase();
-        const baseCode = comp.code.slice(0, 8);
-        const newCode = `${baseCode}-DUP${suffix}`.slice(0, 15);
-        const newSerial = comp.serial
-            ? `${comp.serial.slice(0, 23)}-DUP${suffix}`.slice(0, 30)
-            : null;
+        let newCode;
+        let retries = 0;
+        do {
+            newCode = generateCode({ tag: 'COMP' });
+            retries++;
+        } while (await Computer.findOne({ where: { code: newCode } }) && retries < 20);
+
+        let newSerial;
+        retries = 0;
+        do {
+            newSerial = generateUniqueSerial(null);
+            retries++;
+        } while (await Computer.findOne({ where: { serial: newSerial } }) && retries < 20);
 
         const created = await Computer.create({
             code: newCode,

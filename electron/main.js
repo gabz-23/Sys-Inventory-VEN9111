@@ -14,6 +14,9 @@ import ipcDeskAccessory from './IPCs/DeskAccessory.js';
 import ipcComponent from './IPCs/Component.js';
 import ipcPeripheral from './IPCs/Peripheral.js';
 import ipcItemTrace from './IPCs/ItemTrace.js';
+import ipcCannibalization from './IPCs/Cannibalization.js';
+import ipcCannibalizationLog from './IPCs/CannibalizationLog.js';
+import ipcTraceabilityReport from './IPCs/TraceabilityReport.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,6 +71,9 @@ app.whenReady().then(async () => {
     ipcComponent();
     ipcPeripheral();
     ipcItemTrace();
+    ipcCannibalization();
+    ipcCannibalizationLog();
+    ipcTraceabilityReport();
 
     // Ventana de la aplicación
     createMainWindow();

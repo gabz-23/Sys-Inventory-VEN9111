@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogHeader } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -24,6 +25,8 @@ export const DeskEditDialog = ({ desk, open, onOpenChange }) => {
     const { updateDesk, desks, loadDesks } = useDeskStore();
     const { computers, loadComputers } = useComputerStore();
     const { employees, loadEmployees } = useEmployeeStore();
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(deskFormSchema),
@@ -50,6 +53,8 @@ export const DeskEditDialog = ({ desk, open, onOpenChange }) => {
                 // Asegurar que los accesorios se carguen correctamente
                 accessories: desk.accessories || [],
             });
+            setError('');
+            setIsLoading(false);
         }
     }, [desk, form]);
 
@@ -78,14 +83,30 @@ export const DeskEditDialog = ({ desk, open, onOpenChange }) => {
         .map((d) => d.employeeId);
     const availableEmployees = employees.filter((emp) => !assignedEmployeeIds.includes(emp.id));
 
-    const handleSubmit = (data) => {
-        const submitData = {
-            ...data,
-            computer: data.computer === '' || data.computer === 'none' ? null : data.computer,
-            employee: data.employee === '' || data.employee === 'none' ? null : data.employee,
-        };
-        updateDesk(desk.id, submitData);
-        onOpenChange(); // Cerrar el diálogo después de enviar
+    const handleSubmit = async (data) => {
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const submitData = {
+                ...data,
+                computer: data.computer === '' || data.computer === 'none' ? null : data.computer,
+                employee: data.employee === '' || data.employee === 'none' ? null : data.employee,
+            };
+            await updateDesk(desk.id, submitData);
+            onOpenChange(false); // Cerrar el diálogo después de enviar exitosamente
+        } catch (err) {
+            let errorMessage = err.message || 'Error al actualizar escritorio';
+            errorMessage = errorMessage.replace(/^Error invoking remote method '[^']+': Error: /, '');
+            const match = errorMessage.match(/^VALIDATION_ERROR:(\w+):(.+)$/);
+            if (match) {
+                form.setError(match[1], { message: match[2] });
+            } else {
+                setError(errorMessage);
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -99,6 +120,11 @@ export const DeskEditDialog = ({ desk, open, onOpenChange }) => {
                 <div className="flex-1 overflow-y-auto min-h-0 px-6 pb-6 pt-4">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(handleSubmit)}>
+                            {error && (
+                                <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
+                                    {error}
+                                </div>
+                            )}
                             <div className="grid gap-4 grid-cols-1">
                                 <div className="space-y-2">
                                     <FormField
@@ -181,8 +207,15 @@ export const DeskEditDialog = ({ desk, open, onOpenChange }) => {
                                     <SearchAccessory form={form} computer={undefined} desk={desk} />
                                 </div>
                             </div>
-                            <Button className="w-full cursor-pointer mt-6" type="submit">
-                                Guardar Escritorio
+                            <Button className="w-full cursor-pointer mt-6" type="submit" disabled={isLoading}>
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Guardando...
+                                    </>
+                                ) : (
+                                    'Guardar Escritorio'
+                                )}
                             </Button>
                         </form>
                     </Form>

@@ -17,7 +17,12 @@ export const getAllEmployees = async () => {
 };
 
 export const createEmployee = async (data) => {
-    const created = await Employee.create(data);
+    const sanitized = {
+        ...data,
+        correo: data.correo?.trim() || null,
+        telefono: data.telefono?.trim() || null,
+    };
+    const created = await Employee.create(sanitized);
 
     await logActivity('employee', created.id, 'created', created.nombres, 'Empleado');
 
@@ -25,7 +30,12 @@ export const createEmployee = async (data) => {
 };
 
 export const updateEmployee = async (id, data) => {
-    await Employee.update(data, { where: { id } });
+    const sanitized = {
+        ...data,
+        correo: data.correo?.trim() || null,
+        telefono: data.telefono?.trim() || null,
+    };
+    await Employee.update(sanitized, { where: { id } });
 
     const updated = await Employee.findByPk(id);
 

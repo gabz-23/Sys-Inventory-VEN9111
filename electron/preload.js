@@ -59,6 +59,26 @@ contextBridge.exposeInMainWorld('electronAPI', {
     deleteItemTrace: (id) => ipcRenderer.invoke('db:deleteItemTrace', id),
     deleteManyItemTraces: (ids) => ipcRenderer.invoke('db:deleteManyItemTraces', ids),
 
+    // Operaciones de canibalización
+    getAllCannibalizaciones: () => ipcRenderer.invoke('db:getAllCannibalizaciones'),
+    createCannibalizacion: (data) => ipcRenderer.invoke('db:createCannibalizacion', data),
+    createBulkCannibalizacion: (data) => ipcRenderer.invoke('db:createBulkCannibalizacion', data),
+    deleteCannibalizacion: (id) => ipcRenderer.invoke('db:deleteCannibalizacion', id),
+    getMissingItemsByComputer: (computerId) => ipcRenderer.invoke('db:getMissingItemsByComputer', computerId),
+    createBulkCannibalizationMovement: (data) => ipcRenderer.invoke('db:createBulkCannibalizationMovement', data),
+    getAllCannibalizationMovements: () => ipcRenderer.invoke('db:getAllCannibalizationMovements'),
+    deleteManyCannibalizationMovements: (ids) => ipcRenderer.invoke('db:deleteManyCannibalizationMovements', ids),
+
+    // Operaciones de bitácora de canibalización
+    getCannibalizationLogItems: (states) => ipcRenderer.invoke('db:getCannibalizationLogItems', states),
+    transitionItemState: (data) => ipcRenderer.invoke('db:transitionItemState', data),
+    getAvailableItems: () => ipcRenderer.invoke('db:getAvailableItems'),
+
+    // Operaciones de reporte de trazabilidad unificado
+    getUnifiedTraceability: (filters) => ipcRenderer.invoke('db:getUnifiedTraceability', filters),
+    getTraceabilityUsers: () => ipcRenderer.invoke('db:getTraceabilityUsers'),
+    getTraceabilityItemTypes: () => ipcRenderer.invoke('db:getTraceabilityItemTypes'),
+
     // Operaciones de respaldo de base de datos
     backupDatabase: () => ipcRenderer.invoke('db:backupDatabase'),
     restoreDatabase: () => ipcRenderer.invoke('db:restoreDatabase'),

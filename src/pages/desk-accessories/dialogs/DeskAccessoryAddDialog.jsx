@@ -22,15 +22,15 @@ const accessoryStateOptions = [
     { label: 'Dañado', value: 'Dañado' },
     { label: 'Repuesto', value: 'Repuesto' },
     { label: 'En reparacion', value: 'En reparacion' },
-    { label: 'Reparado', value: 'Reparado' },
-    { label: 'Reconstruido', value: 'Reconstruido' },
+    { label: 'Reincorporado', value: 'Reincorporado' },
+
 ];
 
 const deskAccessoryFormSchema = zod.object({
     code: zod.string().min(1, 'El código es requerido'),
     serial: zod.string().optional().default(''),
     description: zod.string().optional().default(''),
-    type: zod.string().min(1, 'El tipo es requerido'),
+    type: zod.enum(['Silla', 'Lampara', 'Papelera', 'Archivero', 'Telefono'], { required_error: 'El tipo es requerido' }),
     state: zod.string().min(1, 'El estado es requerido'),
 });
 
@@ -71,10 +71,13 @@ export const DeskAccessoryAddDialog = ({ open, onOpenChange }) => {
         try {
             const qty = data.quantity || 1;
 
+            const rand = () => Math.random().toString(36).substring(2, 7).toUpperCase();
+
             for (let i = 0; i < qty; i++) {
                 const submitData = { ...data };
                 if (i > 0) {
-                    submitData.code = 'acc-copia';
+                    submitData.code = `ACC-${rand()}`;
+                    submitData.serial = `SN-${rand()}-${rand()}`;
                 }
                 await addDeskAccessory(submitData);
             }
@@ -82,7 +85,12 @@ export const DeskAccessoryAddDialog = ({ open, onOpenChange }) => {
         } catch (err) {
             let errorMessage = err.message || 'Error al agregar accesorio de escritorio';
             errorMessage = errorMessage.replace(/^Error invoking remote method '[^']+': Error: /, '');
-            setError(errorMessage);
+            const match = errorMessage.match(/^VALIDATION_ERROR:(\w+):(.+)$/);
+            if (match) {
+                form.setError(match[1], { message: match[2] });
+            } else {
+                setError(errorMessage);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -163,16 +171,20 @@ export const DeskAccessoryAddDialog = ({ open, onOpenChange }) => {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Tipo</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="Ej: Silla, Lámpara, Archivero"
-                                                    {...field}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value;
-                                                        field.onChange(val ? val.charAt(0).toUpperCase() + val.slice(1).toLowerCase() : val);
-                                                    }}
-                                                />
-                                            </FormControl>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Seleccione el tipo" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="Silla">Silla</SelectItem>
+                                                    <SelectItem value="Lampara">Lámpara</SelectItem>
+                                                    <SelectItem value="Papelera">Papelera</SelectItem>
+                                                    <SelectItem value="Archivero">Archivero</SelectItem>
+                                                    <SelectItem value="Telefono">Teléfono</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}

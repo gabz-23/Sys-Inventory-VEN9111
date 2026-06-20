@@ -57,8 +57,7 @@ export const ReportFilters = ({ filters, onFilterChange, onClearFilters, categor
         { value: 'Repuesto', label: 'Repuesto' },
         { value: 'Dañado', label: 'Dañado' },
         { value: 'En reparacion', label: 'En reparacion' },
-        { value: 'Reparado', label: 'Reparado' },
-        { value: 'Reconstruido', label: 'Reconstruido' },
+        { value: 'Reincorporado', label: 'Reincorporado' },
         { value: 'Disponible', label: 'Disponible' },
         { value: 'Asignado', label: 'Asignado' },
     ];

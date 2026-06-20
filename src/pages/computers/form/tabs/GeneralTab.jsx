@@ -4,7 +4,12 @@ import { TabsContent } from '@/components/ui/tabs';
 import { FormInput } from '../FormInput';
 import { InputRequired } from '@/components/form/InputRequired';
 
-export const GeneralTab = ({ form }) => {
+const STATE_OPTIONS = ['Bueno', 'Repuesto', 'Dañado', 'Reconstruido', 'Reincorporado'];
+const RECONSTRUIDO_TRANSITIONS = ['Reconstruido', 'Repuesto', 'Dañado', 'Reincorporado'];
+
+export const GeneralTab = ({ form, computer }) => {
+    const isReconstruido = computer?.state === 'Reconstruido';
+    const stateOptions = isReconstruido ? RECONSTRUIDO_TRANSITIONS : STATE_OPTIONS;
     return (
         <TabsContent value="general" className="space-y-4 mt-4 mb-6">
             <div className="grid gap-4 md:grid-cols-2">
@@ -77,11 +82,9 @@ export const GeneralTab = ({ form }) => {
                                             <SelectValue placeholder="Seleccione el estado" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Bueno" className="cursor-pointer">Bueno</SelectItem>
-                                            <SelectItem value="Repuesto" className="cursor-pointer">Repuesto</SelectItem>
-                                            <SelectItem value="Dañado" className="cursor-pointer">Dañado</SelectItem>
-                                            <SelectItem value="Reparado" className="cursor-pointer">Reparado</SelectItem>
-                                            <SelectItem value="Reconstruido" className="cursor-pointer">Reconstruido</SelectItem>
+                                            {stateOptions.map((opt) => (
+                                                <SelectItem key={opt} value={opt} className="cursor-pointer">{opt}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </FormControl>

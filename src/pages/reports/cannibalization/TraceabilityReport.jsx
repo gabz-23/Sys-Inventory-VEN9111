@@ -48,7 +48,7 @@ export const TraceabilityReport = forwardRef((_, ref) => {
                         <TableHead className="whitespace-nowrap h-8 px-2">Razón</TableHead>
                         <TableHead className="whitespace-nowrap h-8 px-2">Dañado</TableHead>
                         <TableHead className="whitespace-nowrap h-8 px-2">Reparac.</TableHead>
-                        <TableHead className="whitespace-nowrap h-8 px-2">Reparado</TableHead>
+                        <TableHead className="whitespace-nowrap h-8 px-2">Reincorporado</TableHead>
                         <TableHead className="whitespace-nowrap h-8 px-2">Reconst.</TableHead>
                         <TableHead className="whitespace-nowrap h-8 px-2">Reg. por</TableHead>
                     </TableRow>

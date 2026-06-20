@@ -16,15 +16,13 @@ import { useDeskReportExport } from './hooks/useDeskReportExport';
 import { ReportFilters } from './components/ReportFilters';
 import { ReportTable } from './components/ReportTable';
 import { DeskReportTable } from './components/DeskReportTable';
-import { CannibalizationReport } from './cannibalization/CannibalizationReport';
-import { TraceabilityReport } from './cannibalization/TraceabilityReport';
+import { TraceabilityReport } from './traceability/TraceabilityReport';
 import { useAuthStore } from '@/store/useAuthStore';
 
 const DESCRIPTIONS = {
     general: 'Utilice los filtros para personalizar la vista del inventario',
     desks: 'Vista del inventario organizado por escritorio',
-    cannibalization: 'Gestión del flujo de canibalización: seguimiento de items dañados, en reparación, reconstruidos y disponibles',
-    traceability: 'Historial completo de movimientos y cambios de estado de todos los items',
+    traceability: 'Historial completo de movimientos, cambios de estado y canibalización de todos los elementos',
 };
 
 export const ReportsPage = () => {
@@ -53,7 +51,6 @@ export const ReportsPage = () => {
     const { exportToExcel, exportDeskToExcel } = useExcelExport();
     const { exportDeskReport } = useDeskReportExport();
 
-    const cannibalizationRef = useRef(null);
     const traceabilityRef = useRef(null);
 
     const { user } = useAuthStore();
@@ -97,8 +94,6 @@ export const ReportsPage = () => {
         let fileName;
         if (reportType === 'desks') {
             fileName = await exportDeskReport();
-        } else if (reportType === 'cannibalization') {
-            fileName = cannibalizationRef.current?.handleExportPDF();
         } else if (reportType === 'traceability') {
             fileName = traceabilityRef.current?.handleExportPDF();
         } else {
@@ -114,8 +109,6 @@ export const ReportsPage = () => {
         let fileName;
         if (reportType === 'desks') {
             fileName = await exportDeskToExcel();
-        } else if (reportType === 'cannibalization') {
-            fileName = cannibalizationRef.current?.handleExportExcel();
         } else if (reportType === 'traceability') {
             fileName = traceabilityRef.current?.handleExportExcel();
         } else {
@@ -160,16 +153,6 @@ export const ReportsPage = () => {
                     </button>
                     <button
                         className={`px-3 py-1.5 text-sm rounded-md cursor-pointer transition-all ${
-                            reportType === 'cannibalization'
-                                ? 'bg-background shadow-sm font-medium text-foreground'
-                                : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                        onClick={() => setReportType('cannibalization')}
-                    >
-                        Canibalización
-                    </button>
-                    <button
-                        className={`px-3 py-1.5 text-sm rounded-md cursor-pointer transition-all ${
                             reportType === 'traceability'
                                 ? 'bg-background shadow-sm font-medium text-foreground'
                                 : 'text-muted-foreground hover:text-foreground'
@@ -211,8 +194,6 @@ export const ReportsPage = () => {
             )}
 
             {reportType === 'desks' && <DeskReportTable />}
-
-            {reportType === 'cannibalization' && <CannibalizationReport ref={cannibalizationRef} />}
 
             {reportType === 'traceability' && <TraceabilityReport ref={traceabilityRef} />}
 

@@ -4,6 +4,7 @@ import { useDeskStore } from '@/pages/desks/store/useDeskStore';
 import { useDeskAccessoryStore } from '@/store/useDeskAccessoryStore';
 import { useComponentStore } from '@/store/useComponentStore';
 import { usePeripheralStore } from '@/store/usePeripheralStore';
+import { useCannibalizationStore } from '@/store/useCannibalizationStore';
 
 export const useReportStore = create(() => ({
     // Cargar todos los datos necesarios para los reportes
@@ -13,6 +14,7 @@ export const useReportStore = create(() => ({
         const deskAccStore = useDeskAccessoryStore.getState();
         const componentStore = useComponentStore.getState();
         const peripheralStore = usePeripheralStore.getState();
+        const cannibalizationStore = useCannibalizationStore.getState();
 
         await Promise.all([
             computerStore.loadComputers(),
@@ -20,6 +22,7 @@ export const useReportStore = create(() => ({
             deskAccStore.loadDeskAccessories(),
             componentStore.loadComponents(),
             peripheralStore.loadPeripherals(),
+            cannibalizationStore.loadMovements(),
         ]);
     },
 
@@ -30,6 +33,7 @@ export const useReportStore = create(() => ({
         const deskAccStore = useDeskAccessoryStore.getState();
         const componentStore = useComponentStore.getState();
         const peripheralStore = usePeripheralStore.getState();
+        const cannibalizationStore = useCannibalizationStore.getState();
 
         return {
             computers: computerStore.computers || [],
@@ -37,6 +41,7 @@ export const useReportStore = create(() => ({
             deskAccessories: deskAccStore.deskAccessories || [],
             components: componentStore.components || [],
             peripherals: peripheralStore.peripherals || [],
+            movements: cannibalizationStore.movements || [],
         };
     },
 }));

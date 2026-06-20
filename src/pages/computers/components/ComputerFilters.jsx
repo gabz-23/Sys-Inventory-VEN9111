@@ -20,7 +20,7 @@ export const ComputerFilters = ({ table, computers = [] }) => {
     }, [computers]);
 
     // Estados disponibles
-    const states = ['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reparado', 'Reconstruido'];
+    const states = ['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reincorporado'];
 
     // Obtener filtros activos
     const deskFilter = table.getColumn('deskTable')?.getFilterValue();

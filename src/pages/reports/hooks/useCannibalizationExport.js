@@ -14,36 +14,28 @@ export const useCannibalizationExport = () => {
         try {
             const workbook = XLSX.utils.book_new();
             const headers = [
-                'Tipo', 'Código', 'Descripción', 'Fecha Movimiento', 'Origen',
-                'Destino', 'Razón', 'Estado', 'Dañado', 'En reparación',
-                'Reparado', 'Reconstruido', 'Registrado por',
+                'Código', 'Descripción', 'Tipo', 'Fecha Movimiento',
+                'Donante', 'Receptor', 'Observaciones', 'Registrado por',
             ];
             const tableData = [headers];
 
             items.forEach((item) => {
                 tableData.push([
-                    item.itemType || item.type || '-',
-                    item.itemCode || item.code || '-',
-                    item.itemDescription || item.description || '-',
+                    item.itemCode || '-',
+                    item.itemDescription || '-',
+                    item.itemType || '-',
                     formatDate(item.movementDate),
-                    item.movedFrom || '-',
-                    item.movedTo || '-',
-                    item.movementReason || '-',
-                    item.currentState || item.status || '-',
-                    formatDate(item.dateDamaged),
-                    formatDate(item.dateInRepair),
-                    formatDate(item.dateRepaired),
-                    item.rebuilt ? 'Sí' : 'No',
+                    item.donorComputer || '-',
+                    item.receiverComputer || '-',
+                    item.observations || '-',
                     item.createdBy || '-',
                 ]);
             });
 
             const worksheet = XLSX.utils.aoa_to_sheet(tableData);
             worksheet['!cols'] = [
-                { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 15 },
-                { wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 15 },
-                { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 13 },
-                { wch: 18 },
+                { wch: 15 }, { wch: 30 }, { wch: 15 }, { wch: 15 },
+                { wch: 25 }, { wch: 25 }, { wch: 30 }, { wch: 20 },
             ];
 
             const headerStyle = {
@@ -97,12 +89,12 @@ export const useCannibalizationExport = () => {
             yPosition += 12;
 
             const tableData = items.map((item) => [
-                item.itemType || item.type || '-',
-                item.itemCode || item.code || '-',
-                item.movedFrom || '-',
-                item.movedTo || '-',
-                item.currentState || item.status || '-',
-                item.rebuilt ? 'Sí' : 'No',
+                item.itemCode || '-',
+                item.itemDescription || '-',
+                item.itemType || '-',
+                formatDate(item.movementDate),
+                item.donorComputer || '-',
+                item.receiverComputer || '-',
                 item.createdBy || '-',
             ]);
 
@@ -111,12 +103,12 @@ export const useCannibalizationExport = () => {
             doc.text('Detalle de Movimientos', pageWidth / 2, yPosition, { align: 'center' });
             yPosition += 8;
 
-            const tableWidth = 140;
+            const tableWidth = 170;
             const leftMargin = (pageWidth - tableWidth) / 2;
 
             autoTable(doc, {
                 startY: yPosition,
-                head: [['Tipo', 'Código', 'Origen', 'Destino', 'Estado', 'Reconst.', 'Registrado por']],
+                head: [['Código', 'Descripción', 'Tipo', 'Fecha', 'Donante', 'Receptor', 'Registrado por']],
                 body: tableData,
                 theme: 'striped',
                 tableWidth,
@@ -126,15 +118,15 @@ export const useCannibalizationExport = () => {
                     fontStyle: 'bold',
                     halign: 'center',
                 },
-                styles: { fontSize: 8, cellPadding: 3, halign: 'center' },
+                styles: { fontSize: 7, cellPadding: 2, halign: 'center' },
                 columnStyles: {
                     0: { cellWidth: 20 },
-                    1: { cellWidth: 20 },
-                    2: { cellWidth: 25 },
-                    3: { cellWidth: 25 },
-                    4: { cellWidth: 20 },
-                    5: { cellWidth: 12 },
-                    6: { cellWidth: 18 },
+                    1: { cellWidth: 40 },
+                    2: { cellWidth: 18 },
+                    3: { cellWidth: 22 },
+                    4: { cellWidth: 35 },
+                    5: { cellWidth: 35 },
+                    6: { cellWidth: 20 },
                 },
                 margin: { left: leftMargin, right: leftMargin },
             });

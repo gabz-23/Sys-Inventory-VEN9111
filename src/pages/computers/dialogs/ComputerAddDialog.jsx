@@ -72,15 +72,17 @@ export const ComputerAddDialog = ({ open, onOpenChange }) => {
         try {
             const qty = data.quantity || 1;
 
+            const rand = () => Math.random().toString(36).substring(2, 7).toUpperCase();
+
             for (let i = 0; i < qty; i++) {
                 if (i === 0) {
                     await addComputer(data);
                 } else {
-                    const { computerType, serial, brand, model, state } = data;
+                    const { computerType, brand, model, state } = data;
                     await addComputer({
                         computerType, brand, model, state,
-                        serial: `${serial}-COPIA`.slice(0, 30),
-                        code: 'comp-copia',
+                        code: `COMP-${rand()}`,
+                        serial: `SN-${rand()}-${rand()}`,
                         cpu: '', ramMemory: '', storage: '', graphicCard: '',
                         powerSupply: '', motherboard: '', cooler: '', cdDvd: '',
                         peripherals: [],
@@ -93,7 +95,12 @@ export const ComputerAddDialog = ({ open, onOpenChange }) => {
         } catch (err) {
             let errorMessage = err.message || 'Error al agregar computadora';
             errorMessage = errorMessage.replace(/^Error invoking remote method '[^']+': Error: /, '');
-            setError(errorMessage);
+            const match = errorMessage.match(/^VALIDATION_ERROR:(\w+):(.+)$/);
+            if (match) {
+                form.setError(match[1], { message: match[2] });
+            } else {
+                setError(errorMessage);
+            }
         } finally {
             setIsLoading(false);
         }

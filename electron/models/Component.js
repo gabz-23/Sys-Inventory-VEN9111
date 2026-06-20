@@ -12,24 +12,26 @@ export const ComponentModel = (sequelize) => {
             code: {
                 type: DataTypes.STRING(15),
                 allowNull: false,
+                unique: true,
                 validate: {
                     notEmpty: true,
                 },
             },
             serial: {
-                type: DataTypes.STRING(30),
+                type: DataTypes.STRING(255),
                 allowNull: true,
+                unique: true,
             },
             brand: {
-                type: DataTypes.STRING(30),
+                type: DataTypes.STRING(255),
                 allowNull: true,
             },
             model: {
-                type: DataTypes.STRING(30),
+                type: DataTypes.STRING(255),
                 allowNull: true,
             },
             specs: {
-                type: DataTypes.STRING(100),
+                type: DataTypes.STRING(255),
                 allowNull: true,
             },
             type: {

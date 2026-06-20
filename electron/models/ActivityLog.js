@@ -13,7 +13,7 @@ export const ActivityLogModel = (sequelize) => {
                 type: DataTypes.STRING(20),
                 allowNull: false,
                 validate: {
-                    isIn: [['computer', 'desk', 'accessory', 'employee', 'desk_accessory', 'component', 'peripheral', 'item_trace']],
+                    isIn: [['computer', 'desk', 'accessory', 'employee', 'desk_accessory', 'component', 'peripheral', 'item_trace', 'cannibalization']],
                 },
             },
             entityId: {

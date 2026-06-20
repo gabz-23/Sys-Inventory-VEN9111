@@ -82,7 +82,12 @@ export const ComputerEditDialog = ({ computer, open, onOpenChange }) => {
             let errorMessage = err.message || 'Error al actualizar computadora';
             // Remover el prefijo "Error invoking remote method '[^']+': Error: "
             errorMessage = errorMessage.replace(/^Error invoking remote method '[^']+': Error: /, '');
-            setError(errorMessage);
+            const match = errorMessage.match(/^VALIDATION_ERROR:(\w+):(.+)$/);
+            if (match) {
+                form.setError(match[1], { message: match[2] });
+            } else {
+                setError(errorMessage);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -119,7 +124,7 @@ export const ComputerEditDialog = ({ computer, open, onOpenChange }) => {
                                 </div>
                             )}
 
-                            <GeneralTab form={form} />
+                            <GeneralTab form={form} computer={computer} />
                             <SpecsTab form={form} computer={computer} />
                             <PeripheralTab form={form} computer={computer} />
 

@@ -12,6 +12,7 @@ export const DeskAccessoryModel = (sequelize) => {
             code: {
                 type: DataTypes.STRING(15),
                 allowNull: false,
+                unique: true,
                 validate: {
                     notEmpty: true,
                 },
@@ -19,9 +20,10 @@ export const DeskAccessoryModel = (sequelize) => {
             serial: {
                 type: DataTypes.STRING(255),
                 allowNull: true,
+                unique: true,
             },
             description: {
-                type: DataTypes.STRING(40),
+                type: DataTypes.STRING(255),
                 allowNull: false,
                 validate: {
                     notEmpty: true,
@@ -39,7 +41,7 @@ export const DeskAccessoryModel = (sequelize) => {
                 allowNull: false,
                 defaultValue: 'Bueno',
                 validate: {
-                    isIn: [['Bueno', 'Dañado', 'Repuesto', 'En reparacion', 'Reparado', 'Reconstruido']],
+                    isIn: [['Bueno', 'Dañado', 'Repuesto', 'En reparacion', 'Reincorporado']],
                 },
             },
             deskTableId: {

@@ -26,7 +26,7 @@ const employeeFormSchema = zod.object({
         (val) => !val || val.endsWith('@gmail.com') || val.endsWith('@outlook.com'),
         'Solo se permiten correos de @gmail.com o @outlook.com'
     ).optional().or(zod.literal('')).default(''),
-    tipoEmpleado: zod.string().min(1, 'El tipo de empleado es requerido'),
+    tipoEmpleado: zod.string({ required_error: 'Seleccione el tipo de empleado' }).refine(v => ['Administrador', 'Gestion humana', 'Sistemas', 'Mantenimiento', 'Transporte'].includes(v), { message: 'Seleccione el tipo de empleado' }),
     estado: zod.string().min(1, 'El estado es requerido'),
 });
 
@@ -192,7 +192,18 @@ export const EmployeeAddDialog = ({ open, onOpenChange }) => {
                                         <FormItem>
                                             <FormLabel>Tipo de Empleado</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Ej: Administrativo, Técnico, Supervisor" {...field} />
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <SelectTrigger className="w-full cursor-pointer">
+                                                        <SelectValue placeholder="Seleccione un tipo" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Administrador" className="cursor-pointer">Administrador</SelectItem>
+                                                        <SelectItem value="Gestion humana" className="cursor-pointer">Gestion humana</SelectItem>
+                                                        <SelectItem value="Sistemas" className="cursor-pointer">Sistemas</SelectItem>
+                                                        <SelectItem value="Mantenimiento" className="cursor-pointer">Mantenimiento</SelectItem>
+                                                        <SelectItem value="Transporte" className="cursor-pointer">Transporte</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

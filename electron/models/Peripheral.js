@@ -12,27 +12,29 @@ export const PeripheralModel = (sequelize) => {
             code: {
                 type: DataTypes.STRING(15),
                 allowNull: false,
+                unique: true,
                 validate: {
                     notEmpty: true,
                 },
             },
             serial: {
-                type: DataTypes.STRING(30),
+                type: DataTypes.STRING(255),
                 allowNull: true,
+                unique: true,
             },
             description: {
-                type: DataTypes.STRING(40),
+                type: DataTypes.STRING(255),
                 allowNull: false,
                 validate: {
                     notEmpty: true,
                 },
             },
             brand: {
-                type: DataTypes.STRING(30),
+                type: DataTypes.STRING(255),
                 allowNull: true,
             },
             model: {
-                type: DataTypes.STRING(30),
+                type: DataTypes.STRING(255),
                 allowNull: true,
             },
             connectionType: {

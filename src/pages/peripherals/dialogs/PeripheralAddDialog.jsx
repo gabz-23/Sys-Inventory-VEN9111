@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePeripheralStore } from '@/store/usePeripheralStore';
 
-const PERIPHERAL_STATES = ['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reparado', 'Reconstruido'];
+const PERIPHERAL_STATES = ['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reincorporado'];
 
 const peripheralFormSchema = zod.object({
     code: zod.string().min(1, 'El código es requerido'),
@@ -25,9 +25,9 @@ const peripheralFormSchema = zod.object({
     description: zod.string().min(1, 'La descripción es requerida'),
     brand: zod.string().min(1, 'La marca es requerida'),
     model: zod.string().min(1, 'El modelo es requerido'),
-    connectionType: zod.string().min(1, 'El tipo de conexión es requerido'),
-    type: zod.string().min(1, 'El tipo es requerido'),
-    state: zod.enum(['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reparado', 'Reconstruido'], 'El estado es obligatorio'),
+    connectionType: zod.string({ required_error: 'Seleccione el tipo de conexión' }).refine(v => ['VGA', 'USB', 'Bluetooth', 'HDMI', 'Otro'].includes(v), { message: 'Seleccione el tipo de conexión' }),
+    type: zod.string({ required_error: 'Seleccione el tipo' }).refine(v => ['Mouse', 'Monitor', 'Impresora', 'Teclado'].includes(v), { message: 'Seleccione el tipo' }),
+    state: zod.enum(['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reincorporado'], 'El estado es obligatorio'),
 });
 
 const addFormSchema = peripheralFormSchema.extend({
@@ -67,13 +67,16 @@ export const PeripheralAddDialog = ({ open, onOpenChange }) => {
         setIsLoading(true);
         setError('');
 
+        const rand = () => Math.random().toString(36).substring(2, 7).toUpperCase();
+
         try {
             const qty = data.quantity || 1;
 
             for (let i = 0; i < qty; i++) {
                 const submitData = { ...data };
                 if (i > 0) {
-                    submitData.code = 'per-copia';
+                    submitData.code = `PER-${rand()}`;
+                    submitData.serial = `SN-${rand()}-${rand()}`;
                 }
                 await addPeripheral(submitData);
             }
@@ -81,7 +84,12 @@ export const PeripheralAddDialog = ({ open, onOpenChange }) => {
         } catch (err) {
             let errorMessage = err.message || 'Error al agregar periférico';
             errorMessage = errorMessage.replace(/^Error invoking remote method '[^']+': Error: /, '');
-            setError(errorMessage);
+            const match = errorMessage.match(/^VALIDATION_ERROR:(\w+):(.+)$/);
+            if (match) {
+                form.setError(match[1], { message: match[2] });
+            } else {
+                setError(errorMessage);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -190,9 +198,20 @@ export const PeripheralAddDialog = ({ open, onOpenChange }) => {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Tipo de Conexión</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Ej: USB, Bluetooth, HDMI" {...field} />
-                                            </FormControl>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Seleccione conexión" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="VGA">VGA</SelectItem>
+                                                    <SelectItem value="USB">USB</SelectItem>
+                                                    <SelectItem value="Bluetooth">Bluetooth</SelectItem>
+                                                    <SelectItem value="HDMI">HDMI</SelectItem>
+                                                    <SelectItem value="Otro">Otro</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -204,9 +223,20 @@ export const PeripheralAddDialog = ({ open, onOpenChange }) => {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Tipo</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Ej: Impresora, Escáner" {...field} />
-                                            </FormControl>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Seleccione el tipo" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="Mouse">Mouse</SelectItem>
+                                                    <SelectItem value="Monitor">Monitor</SelectItem>
+                                                    <SelectItem value="Impresora">Impresora</SelectItem>
+                                                    <SelectItem value="Teclado">Teclado</SelectItem>
+
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}

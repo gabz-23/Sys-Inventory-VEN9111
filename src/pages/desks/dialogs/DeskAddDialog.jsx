@@ -79,6 +79,7 @@ export const DeskAddDialog = ({ open, onOpenChange }) => {
 
         try {
             const qty = data.quantity || 1;
+            const rand = () => Math.random().toString(36).substring(2, 7).toUpperCase();
 
             for (let i = 0; i < qty; i++) {
                 const submitData = {
@@ -87,7 +88,7 @@ export const DeskAddDialog = ({ open, onOpenChange }) => {
                     employee: data.employee === '' || data.employee === 'none' ? null : data.employee,
                 };
                 if (i > 0) {
-                    submitData.code = 'esc-copia';
+                    submitData.code = `ESC-${rand()}`;
                     submitData.computer = null;
                     submitData.employee = null;
                     submitData.accessories = [];
@@ -98,7 +99,12 @@ export const DeskAddDialog = ({ open, onOpenChange }) => {
         } catch (err) {
             let errorMessage = err.message || 'Error al agregar escritorio';
             errorMessage = errorMessage.replace(/^Error invoking remote method '[^']+': Error: /, '');
-            setError(errorMessage);
+            const match = errorMessage.match(/^VALIDATION_ERROR:(\w+):(.+)$/);
+            if (match) {
+                form.setError(match[1], { message: match[2] });
+            } else {
+                setError(errorMessage);
+            }
         } finally {
             setIsLoading(false);
         }

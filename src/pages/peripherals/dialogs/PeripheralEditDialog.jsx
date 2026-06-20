@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as zod from 'zod';
+import { Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogHeader } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -9,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePeripheralStore } from '@/store/usePeripheralStore';
 
-const PERIPHERAL_STATES = ['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reparado', 'Reconstruido'];
+const PERIPHERAL_STATES = ['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reincorporado'];
 
 const peripheralFormSchema = zod.object({
     code: zod.string().min(1, 'El código es requerido'),
@@ -17,9 +18,9 @@ const peripheralFormSchema = zod.object({
     description: zod.string().min(1, 'La descripción es requerida'),
     brand: zod.string().min(1, 'La marca es requerida'),
     model: zod.string().min(1, 'El modelo es requerido'),
-    connectionType: zod.string().min(1, 'El tipo de conexión es requerido'),
-    type: zod.string().min(1, 'El tipo es requerido'),
-    state: zod.enum(['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reparado', 'Reconstruido'], 'El estado es obligatorio'),
+    connectionType: zod.string({ required_error: 'Seleccione el tipo de conexión' }).refine(v => ['VGA', 'USB', 'Bluetooth', 'HDMI', 'Otro'].includes(v), { message: 'Seleccione el tipo de conexión' }),
+    type: zod.string({ required_error: 'Seleccione el tipo' }).refine(v => ['Mouse', 'Monitor', 'Impresora', 'Teclado', 'Cargador'].includes(v), { message: 'Seleccione el tipo' }),
+    state: zod.enum(['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reincorporado'], 'El estado es obligatorio'),
 });
 
 const defaultFormData = {
@@ -35,6 +36,8 @@ const defaultFormData = {
 
 export const PeripheralEditDialog = ({ peripheral, open, onOpenChange }) => {
     const { updatePeripheral } = usePeripheralStore();
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(peripheralFormSchema),
@@ -53,12 +56,30 @@ export const PeripheralEditDialog = ({ peripheral, open, onOpenChange }) => {
                 type: peripheral.type || '',
                 state: peripheral.state || 'Bueno',
             });
+            setError('');
+            setIsLoading(false);
         }
     }, [peripheral, form]);
 
-    const handleSubmit = (data) => {
-        updatePeripheral(peripheral.id, data);
-        onOpenChange();
+    const handleSubmit = async (data) => {
+        setIsLoading(true);
+        setError('');
+
+        try {
+            await updatePeripheral(peripheral.id, data);
+            onOpenChange(false);
+        } catch (err) {
+            let errorMessage = err.message || 'Error al actualizar periférico';
+            errorMessage = errorMessage.replace(/^Error invoking remote method '[^']+': Error: /, '');
+            const match = errorMessage.match(/^VALIDATION_ERROR:(\w+):(.+)$/);
+            if (match) {
+                form.setError(match[1], { message: match[2] });
+            } else {
+                setError(errorMessage);
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -72,6 +93,11 @@ export const PeripheralEditDialog = ({ peripheral, open, onOpenChange }) => {
                 <div className="flex-1 overflow-y-auto min-h-0 px-6 pb-6 pt-4">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(handleSubmit)}>
+                            {error && (
+                                <div className="mb-4 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
+                                    {error}
+                                </div>
+                            )}
                             <div className="grid gap-4 grid-cols-2">
                                 <FormField
                                     control={form.control}
@@ -149,9 +175,20 @@ export const PeripheralEditDialog = ({ peripheral, open, onOpenChange }) => {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Tipo de Conexión</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Ej: USB, Bluetooth, HDMI" {...field} />
-                                            </FormControl>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Seleccione conexión" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="VGA">VGA</SelectItem>
+                                                    <SelectItem value="USB">USB</SelectItem>
+                                                    <SelectItem value="Bluetooth">Bluetooth</SelectItem>
+                                                    <SelectItem value="HDMI">HDMI</SelectItem>
+                                                    <SelectItem value="Otro">Otro</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -163,9 +200,20 @@ export const PeripheralEditDialog = ({ peripheral, open, onOpenChange }) => {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Tipo</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Ej: Impresora, Escáner" {...field} />
-                                            </FormControl>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Seleccione el tipo" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="Mouse">Mouse</SelectItem>
+                                                    <SelectItem value="Monitor">Monitor</SelectItem>
+                                                    <SelectItem value="Impresora">Impresora</SelectItem>
+                                                    <SelectItem value="Teclado">Teclado</SelectItem>
+                                                    <SelectItem value="Cargador">Cargador</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -195,8 +243,15 @@ export const PeripheralEditDialog = ({ peripheral, open, onOpenChange }) => {
                                 />
                             </div>
 
-                            <Button className="w-full cursor-pointer mt-6" type="submit">
-                                Guardar Periférico
+                            <Button className="w-full cursor-pointer mt-6" type="submit" disabled={isLoading}>
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Guardando...
+                                    </>
+                                ) : (
+                                    'Guardar Periférico'
+                                )}
                             </Button>
                         </form>
                     </Form>

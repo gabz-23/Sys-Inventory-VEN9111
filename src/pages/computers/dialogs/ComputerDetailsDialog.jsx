@@ -186,8 +186,13 @@ export const ComputerDetailsDialog = ({ open, onOpenChange, computer }) => {
                                                             </span>
                                                         )}
                                                     </div>
+                                                    {peripheral.type && (
+                                                        <span className="text-xs text-slate-600 mt-1 font-medium">
+                                                            Tipo: {peripheral.type}
+                                                        </span>
+                                                    )}
                                                     {peripheral.connectionType && (
-                                                        <span className="text-xs text-purple-600 mt-1 font-medium">
+                                                        <span className="text-xs text-purple-600 font-medium">
                                                             Tipo de conexión: {peripheral.connectionType}
                                                         </span>
                                                     )}

@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useComponentStore } from '@/store/useComponentStore';
 
-const COMPONENT_STATES = ['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reparado', 'Reconstruido'];
+const COMPONENT_STATES = ['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reincorporado'];
 
 const componentFormSchema = zod.object({
     code: zod.string().min(1, 'El código es requerido'),
@@ -25,8 +25,8 @@ const componentFormSchema = zod.object({
     brand: zod.string().optional().default(''),
     model: zod.string().optional().default(''),
     specs: zod.string().optional().default(''),
-    type: zod.string().min(1, 'El tipo es requerido'),
-    state: zod.enum(['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reparado', 'Reconstruido'], 'El estado es obligatorio'),
+    type: zod.string({ required_error: 'Seleccione el tipo' }).refine(v => ['Procesador', 'Memoria RAM', 'Disco / Almacenamiento', 'Tarjeta Gráfica'].includes(v), { message: 'Seleccione el tipo' }),
+    state: zod.string({ required_error: 'Seleccione el estado' }).refine(v => ['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reincorporado'].includes(v), { message: 'Seleccione el estado' }),
 });
 
 const addFormSchema = componentFormSchema.extend({
@@ -68,10 +68,13 @@ export const ComponentAddDialog = ({ open, onOpenChange }) => {
         try {
             const qty = data.quantity || 1;
 
+            const rand = () => Math.random().toString(36).substring(2, 7).toUpperCase();
+
             for (let i = 0; i < qty; i++) {
                 const submitData = { ...data };
                 if (i > 0) {
-                    submitData.code = 'comp-copia';
+                    submitData.code = `COMP-${rand()}`;
+                    submitData.serial = `SN-${rand()}-${rand()}`;
                 }
                 await addComponent(submitData);
             }
@@ -79,7 +82,12 @@ export const ComponentAddDialog = ({ open, onOpenChange }) => {
         } catch (err) {
             let errorMessage = err.message || 'Error al agregar componente';
             errorMessage = errorMessage.replace(/^Error invoking remote method '[^']+': Error: /, '');
-            setError(errorMessage);
+            const match = errorMessage.match(/^VALIDATION_ERROR:(\w+):(.+)$/);
+            if (match) {
+                form.setError(match[1], { message: match[2] });
+            } else {
+                setError(errorMessage);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -188,9 +196,19 @@ export const ComponentAddDialog = ({ open, onOpenChange }) => {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Tipo</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Ej: Procesador, Memoria RAM" {...field} />
-                                            </FormControl>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Seleccione el tipo" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="Procesador">Procesador</SelectItem>
+                                                    <SelectItem value="Memoria RAM">Memoria RAM</SelectItem>
+                                                    <SelectItem value="Disco / Almacenamiento">Disco / Almacenamiento</SelectItem>
+                                                    <SelectItem value="Tarjeta Gráfica">Tarjeta Gráfica</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}

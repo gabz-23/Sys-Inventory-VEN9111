@@ -1,6 +1,8 @@
+import { Op } from 'sequelize';
 import { DeskAccessory, DeskTable } from '../database.js';
 import { logActivity } from './activityLogServices.js';
 import { logItemMovement } from './itemTraceServices.js';
+import { generateCode, generateUniqueSerial } from '../helpers/generateCode.js';
 
 export const getAllDeskAccessories = async () => {
     const items = await DeskAccessory.findAll({ order: [['createdAt', 'ASC']] });
@@ -19,7 +21,27 @@ export const getAllDeskAccessories = async () => {
     });
 };
 
+const validateUniqueCodeAndSerial = async (data, excludeId = null) => {
+    const whereExclude = excludeId ? { id: { [Op.ne]: excludeId } } : {};
+
+    if (data.code) {
+        const existing = await DeskAccessory.findOne({ where: { ...whereExclude, code: data.code } });
+        if (existing) {
+            throw new Error(`VALIDATION_ERROR:code:El código "${data.code}" ya está registrado`);
+        }
+    }
+
+    if (data.serial) {
+        const existing = await DeskAccessory.findOne({ where: { ...whereExclude, serial: data.serial } });
+        if (existing) {
+            throw new Error(`VALIDATION_ERROR:serial:El serial "${data.serial}" ya está registrado`);
+        }
+    }
+};
+
 export const createDeskAccessory = async (data) => {
+    await validateUniqueCodeAndSerial(data);
+
     const created = await DeskAccessory.create(data);
     await logActivity('desk_accessory', created.id, 'created', created.code, created.description);
     return created.toJSON();
@@ -27,6 +49,9 @@ export const createDeskAccessory = async (data) => {
 
 export const updateDeskAccessory = async (id, data) => {
     const old = await DeskAccessory.findByPk(id);
+
+    await validateUniqueCodeAndSerial(data, id);
+
     await DeskAccessory.update(data, { where: { id } });
     const updated = await DeskAccessory.findByPk(id);
     if (!updated) throw new Error('Accesorio de escritorio no encontrado');
@@ -56,18 +81,26 @@ export const deleteDeskAccessory = async (id) => {
 export const duplicateDeskAccessories = async (ids) => {
     const originals = await DeskAccessory.findAll({ where: { id: ids } });
     const duplicated = [];
-    for (const original of originals) {
-        const suffix = Math.random().toString(36).slice(2, 5).toUpperCase();
-        const baseCode = original.code.slice(0, 7);
-        const newCode = `${baseCode}-DUP${suffix}`.slice(0, 15);
-        const newSerial = original.serial
-            ? `${original.serial}-DUP${Math.random().toString(36).slice(2, 5).toUpperCase()}`
-            : null;
+    for (const _original of originals) {
+        let newCode;
+        let retries = 0;
+        do {
+            newCode = generateCode({ tag: 'ACC' });
+            retries++;
+        } while (await DeskAccessory.findOne({ where: { code: newCode } }) && retries < 20);
+
+        let newSerial;
+        retries = 0;
+        do {
+            newSerial = generateUniqueSerial(null);
+            retries++;
+        } while (await DeskAccessory.findOne({ where: { serial: newSerial } }) && retries < 20);
+
         const created = await DeskAccessory.create({
             code: newCode,
             serial: newSerial,
-            description: original.description,
-            type: original.type,
+            description: _original.description,
+            type: _original.type,
         });
         await logActivity('desk_accessory', created.id, 'created', created.code, created.description);
         duplicated.push(created.toJSON());

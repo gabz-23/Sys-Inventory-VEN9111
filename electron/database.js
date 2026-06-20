@@ -8,6 +8,8 @@ import { DeskAccessoryModel } from './models/DeskAccessory.js';
 import { ComponentModel } from './models/Component.js';
 import { PeripheralModel } from './models/Peripheral.js';
 import { ItemTraceModel } from './models/ItemTrace.js';
+import { CannibalizationModel } from './models/Cannibalization.js';
+import { CannibalizationMovementModel } from './models/CannibalizationMovement.js';
 
 let sequelize;
 
@@ -20,6 +22,8 @@ export let DeskAccessory = null;
 export let Component = null;
 export let Peripheral = null;
 export let ItemTrace = null;
+export let Cannibalization = null;
+export let CannibalizationMovement = null;
 
 export const initDatabase = async () => {
     try {
@@ -49,21 +53,26 @@ export const initDatabase = async () => {
         Component = ComponentModel(sequelize);
         Peripheral = PeripheralModel(sequelize);
         ItemTrace = ItemTraceModel(sequelize);
+        Cannibalization = CannibalizationModel(sequelize);
+        CannibalizationMovement = CannibalizationMovementModel(sequelize);
 
         // IMPORTANTE: El orden debe respetar las dependencias de foreign keys
         // 1º - Tablas sin FK dependencies
         await ActivityLog.sync();
         await User.sync();
-        await Computer.sync();
+        await Computer.sync({ alter: true });
         await Employee.sync();
         // 2º - Tablas que dependen de Computer y/o Employee
         await DeskTable.sync();     // FK -> computers, employees
-        await Component.sync();     // FK -> computers
-        await Peripheral.sync();    // FK -> computers
+        await Component.sync({ alter: true });     // FK -> computers
+        await Peripheral.sync({ alter: true });    // FK -> computers
         // 3º - Tablas que dependen de DeskTable
-        await DeskAccessory.sync(); // FK -> desktables
+        await DeskAccessory.sync({ alter: true }); // FK -> desktables
         // 4º - Tablas sin FK dependencies (trazabilidad)
         await ItemTrace.sync();
+        // 5º - Tablas de canibalización
+        await Cannibalization.sync();
+        await CannibalizationMovement.sync();
 
         // Migraciones manuales (agregar columnas nuevas sin alter: true)
         try {
@@ -105,13 +114,31 @@ export const initDatabase = async () => {
                 "UPDATE desk_accessories SET state = 'Repuesto' WHERE state = 'repuesto'"
             );
             await sequelize.query(
-                "UPDATE desk_accessories SET state = 'Reparado' WHERE state = 'reparado'"
+                "UPDATE desk_accessories SET state = 'Reincorporado' WHERE state = 'reparado'"
             );
             await sequelize.query(
                 "UPDATE desk_accessories SET state = 'Reconstruido' WHERE state = 'reconstruido'"
             );
         } catch (err) {
             console.error('Error en migración de estados a mayúscula:', err.message);
+        }
+
+        // Migración: renombrar estado 'Reparado' a 'Reincorporado'
+        try {
+            await sequelize.query(
+                "UPDATE computers SET state = 'Reincorporado' WHERE state = 'Reparado'"
+            );
+            await sequelize.query(
+                "UPDATE components SET state = 'Reincorporado' WHERE state = 'Reparado'"
+            );
+            await sequelize.query(
+                "UPDATE peripherals SET state = 'Reincorporado' WHERE state = 'Reparado'"
+            );
+            await sequelize.query(
+                "UPDATE desk_accessories SET state = 'Reincorporado' WHERE state = 'Reparado'"
+            );
+        } catch (err) {
+            console.error('Error en migración de estado Reparado → Reincorporado:', err.message);
         }
 
         try {
@@ -143,6 +170,41 @@ export const initDatabase = async () => {
             }
         } catch (err) {
             console.error('Error en migración de columnas de computadores:', err.message);
+        }
+
+        // Migración: expandir columna cpu a VARCHAR(255)
+        try {
+            const computerColumns = await sequelize.getQueryInterface().describeTable('computers');
+            if (computerColumns.cpu && computerColumns.cpu._length < 255) {
+                await sequelize.query(
+                    "ALTER TABLE computers MODIFY COLUMN cpu VARCHAR(255) NOT NULL"
+                );
+                console.log('Migración: columna cpu expandida a VARCHAR(255)');
+            }
+        } catch (err) {
+            console.error('Error en migración de columna cpu:', err.message);
+        }
+
+        // Migración: expandir columnas restantes de computers a VARCHAR(255)
+        try {
+            const computerColumns = await sequelize.getQueryInterface().describeTable('computers');
+            const compMigrations = [
+                { col: 'serial', oldType: 'VARCHAR(30)' },
+                { col: 'brand', oldType: 'VARCHAR(30)' },
+                { col: 'model', oldType: 'VARCHAR(30)' },
+                { col: 'ram_memory', oldType: 'VARCHAR(30)' },
+                { col: 'storage', oldType: 'VARCHAR(30)' },
+            ];
+            for (const { col, oldType } of compMigrations) {
+                if (computerColumns[col] && computerColumns[col].type === oldType) {
+                    await sequelize.query(
+                        `ALTER TABLE computers MODIFY COLUMN \`${col}\` VARCHAR(255) NOT NULL`
+                    );
+                    console.log(`Migración: columna ${col} de computers expandida a VARCHAR(255)`);
+                }
+            }
+        } catch (err) {
+            console.error('Error en migración de columnas de computers:', err.message);
         }
 
         // Migración: agregar columna state a components
@@ -182,6 +244,61 @@ export const initDatabase = async () => {
             }
         } catch (err) {
             console.error('Error en migración de columna description:', err.message);
+        }
+
+        // Migración: expandir columnas de components a VARCHAR(255)
+        try {
+            const compColumns = await sequelize.getQueryInterface().describeTable('components');
+            const compMigrations = [
+                { col: 'serial', oldType: 'VARCHAR(30)' },
+                { col: 'brand', oldType: 'VARCHAR(30)' },
+                { col: 'model', oldType: 'VARCHAR(30)' },
+                { col: 'specs', oldType: 'VARCHAR(100)' },
+            ];
+            for (const { col, oldType } of compMigrations) {
+                if (compColumns[col] && compColumns[col].type === oldType) {
+                    await sequelize.query(
+                        `ALTER TABLE components MODIFY COLUMN \`${col}\` VARCHAR(255)`
+                    );
+                    console.log(`Migración: columna ${col} de components expandida a VARCHAR(255)`);
+                }
+            }
+        } catch (err) {
+            console.error('Error en migración de columnas de components:', err.message);
+        }
+
+        // Migración: expandir columnas de peripherals a VARCHAR(255)
+        try {
+            const periphColumns = await sequelize.getQueryInterface().describeTable('peripherals');
+            const periphMigrations = [
+                { col: 'serial', oldType: 'VARCHAR(30)' },
+                { col: 'description', oldType: 'VARCHAR(40)' },
+                { col: 'brand', oldType: 'VARCHAR(30)' },
+                { col: 'model', oldType: 'VARCHAR(30)' },
+            ];
+            for (const { col, oldType } of periphMigrations) {
+                if (periphColumns[col] && periphColumns[col].type === oldType) {
+                    await sequelize.query(
+                        `ALTER TABLE peripherals MODIFY COLUMN \`${col}\` VARCHAR(255)`
+                    );
+                    console.log(`Migración: columna ${col} de peripherals expandida a VARCHAR(255)`);
+                }
+            }
+        } catch (err) {
+            console.error('Error en migración de columnas de peripherals:', err.message);
+        }
+
+        // Migración: expandir columna description de desk_accessories a VARCHAR(255)
+        try {
+            const accColumns = await sequelize.getQueryInterface().describeTable('desk_accessories');
+            if (accColumns.description && accColumns.description.type === 'VARCHAR(40)') {
+                await sequelize.query(
+                    'ALTER TABLE desk_accessories MODIFY COLUMN description VARCHAR(255)'
+                );
+                console.log('Migración: columna description de desk_accessories expandida a VARCHAR(255)');
+            }
+        } catch (err) {
+            console.error('Error en migración de description de desk_accessories:', err.message);
         }
 
         // Migración: cambiar serial de desk_accessories de VARCHAR(30) a VARCHAR(255)
@@ -275,13 +392,10 @@ export const initDatabase = async () => {
         }
 
         // Migración: eliminar unique constraints de code y serial en todas las tablas
-        const uniqueTables = [
-            { name: 'computers',      columns: ['code', 'serial'] },
-            { name: 'peripherals',    columns: ['code', 'serial'] },
-            { name: 'components',     columns: ['code', 'serial'] },
-            { name: 'desktables',     columns: ['code'] },
-            { name: 'desk_accessories', columns: ['code', 'serial'] },
-        ];
+        // NOTA: computers ya no está incluida porque code y serial deben ser únicos
+        // NOTA: todas las tablas (computers, desktables, desk_accessories, components, peripherals)
+        // ya no están incluidas porque code y serial deben ser únicos en cada una
+        const uniqueTables = [];
         for (const table of uniqueTables) {
             try {
                 const [indexes] = await sequelize.query(`SHOW INDEX FROM \`${table.name}\``);
@@ -296,6 +410,21 @@ export const initDatabase = async () => {
                 }
             } catch (err) {
                 console.error(`Error en migración de unique indexes de ${table.name}:`, err.message);
+            }
+        }
+
+        // Migración: columna createdBy en cannibalization_movements
+        try {
+            const movementColumns = await sequelize.getQueryInterface().describeTable('cannibalization_movements');
+            if (!movementColumns.created_by) {
+                await sequelize.query(
+                    "ALTER TABLE cannibalization_movements ADD COLUMN created_by VARCHAR(100) DEFAULT NULL"
+                );
+                console.log('Migración: columna created_by agregada a cannibalization_movements');
+            }
+        } catch (err) {
+            if (!err.message.includes("doesn't exist")) {
+                console.error('Error en migración de created_by:', err.message);
             }
         }
 
@@ -314,6 +443,11 @@ export const initDatabase = async () => {
 
         Peripheral.belongsTo(Computer, { foreignKey: 'computerId', as: 'computer' });
         Computer.hasMany(Peripheral, { foreignKey: 'computerId', as: 'peripherals' });
+
+        Cannibalization.belongsTo(Computer, { foreignKey: 'donorComputerId', as: 'donorComputer' });
+        Computer.hasMany(Cannibalization, { foreignKey: 'donorComputerId', as: 'donatedCannib' });
+        Cannibalization.belongsTo(Computer, { foreignKey: 'receiverComputerId', as: 'receiverComputer' });
+        Computer.hasMany(Cannibalization, { foreignKey: 'receiverComputerId', as: 'receivedCannib' });
 
         // Autenticar la conexión a la base de datos
         await sequelize.authenticate();

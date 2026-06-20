@@ -23,7 +23,7 @@ export const compFormSchema = zod.object({
         .min(1, 'Coloca el modelo')
         .max(30, 'El modelo no puede exceder 30 caracteres')
         .transform(capitalize),
-    state: zod.enum(['Bueno', 'Repuesto', 'Dañado', 'En reparacion', 'Reparado', 'Reconstruido'], 'El estado es obligatorio'),
+    state: zod.enum(['Bueno', 'Repuesto', 'Dañado', 'Reconstruido', 'En reparacion', 'Reincorporado'], 'El estado es obligatorio'),
     computerType: zod.enum(['Laptop', 'Escritorio'], 'El tipo de computador es obligatorio'),
 
     // Componentes

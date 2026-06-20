@@ -26,6 +26,10 @@ const SettingsPage = lazy(() => import('./pages/settings/SettingsPage').then((m)
 const HelpPage = lazy(() => import('./pages/help/HelpPage').then((m) => ({ default: m.HelpPage })));
 const BackupPage = lazy(() => import('./pages/backup/BackupPage').then((m) => ({ default: m.BackupPage })));
 const ItemTracePage = lazy(() => import('./pages/item-trace/ItemTracePage').then((m) => ({ default: m.ItemTracePage })));
+const CannibalizacionPage = lazy(() =>
+    import('./pages/canibalizacion/CannibalizacionPage').then((m) => ({ default: m.CannibalizacionPage }))
+);
+
 const AuthPage = lazy(() => import('./pages/auth/AuthPage').then((m) => ({ default: m.AuthPage })));
 
 // Spinner de carga de la pagina
@@ -78,6 +82,7 @@ export const App = () => {
         configuracion: SettingsPage,
         respaldo: BackupPage,
         ayuda: HelpPage,
+        canibalizacion: CannibalizacionPage,
         trazabilidad: ItemTracePage,
     };
     const CurrentPage = page[currentView] ?? DashboardPage;

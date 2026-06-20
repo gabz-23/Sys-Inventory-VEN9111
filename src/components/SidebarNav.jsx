@@ -16,6 +16,7 @@ import {
     Sofa,
     Database,
     History,
+    Scissors,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigationStore } from '@/store/useNavigationStore';
@@ -62,6 +63,11 @@ const navItems = [
                 icon: Usb,
             },
         ],
+    },
+    {
+        title: 'Canibalización',
+        view: 'canibalizacion',
+        icon: Scissors,
     },
     {
         title: 'Trazabilidad',
